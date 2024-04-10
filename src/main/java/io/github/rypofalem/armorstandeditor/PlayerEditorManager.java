@@ -397,10 +397,9 @@ public class PlayerEditorManager implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     void onPlayerMenuClose( InventoryCloseEvent e) {
         if (e.getInventory().getHolder() == null) return;
-        if (!(e.getInventory().getHolder() instanceof ASEHolder)) return;
         if (e.getInventory().getHolder() == equipmentHolder) {
             PlayerEditor pe = players.get(e.getPlayer().getUniqueId());
-            pe.equipMenu.equipArmorstand();
+            Bukkit.getScheduler().runTaskLater(plugin, () -> pe.equipMenu.equipArmorstand(), 1L);
         }
     }
 

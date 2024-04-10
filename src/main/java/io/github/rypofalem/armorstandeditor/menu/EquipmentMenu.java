@@ -26,6 +26,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemFlag;
@@ -94,7 +95,8 @@ public class EquipmentMenu implements ItemFactory {
 
     public void open() {
         fillInventory();
-        pe.getPlayer().openInventory(menuInv);
+        Player player = pe.getPlayer();
+        player.openInventory(menuInv);
     }
 
     public void equipArmorstand() {

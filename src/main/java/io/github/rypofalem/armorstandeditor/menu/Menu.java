@@ -39,7 +39,6 @@ public class Menu implements ItemFactory {
     public Menu(PlayerEditor pe) {
         this.pe = pe;
         menuInv = Bukkit.createInventory(pe.getManager().getMenuHolder(), Configuration.getGUI().getInt("menu.size"), Configuration.color(Configuration.getGUI().getString("menu.title")));
-        fillInventory();
     }
 
     private void fillInventory() {

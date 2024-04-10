@@ -29,6 +29,7 @@ import io.github.rypofalem.armorstandeditor.modes.EditMode;
 
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import net.md_5.bungee.api.ChatMessageType;
@@ -38,6 +39,7 @@ import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scoreboard.Team;
@@ -66,6 +68,7 @@ public class PlayerEditor {
     int frameTargetIndex = 0;
     EquipmentMenu equipMenu;
     long lastCancelled = 0;
+    private long lastOpened = Integer.MIN_VALUE;
 
     public PlayerEditor(UUID uuid, ArmorStandEditorPlugin plugin) {
         this.uuid = uuid;
@@ -79,6 +82,7 @@ public class PlayerEditor {
         movChange = getManager().coarseMov;
         chestMenu = new Menu(this);
     }
+
 
     public void setMode(EditMode editMode) {
         this.eMode = editMode;
@@ -212,6 +216,12 @@ public class PlayerEditor {
 
     private void openEquipment(ArmorStand armorStand) {
         if (!getPlayer().hasPermission("asedit.equipment")) return;
+
+        // make a delay of like 2 seconds.
+        if (this.lastOpened + 500 > System.currentTimeMillis()) {
+            return;
+        }
+        this.lastOpened = System.currentTimeMillis();
         equipMenu = new EquipmentMenu(this, armorStand);
         equipMenu.open();
     }
