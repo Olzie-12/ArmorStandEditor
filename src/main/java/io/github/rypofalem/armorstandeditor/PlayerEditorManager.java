@@ -20,16 +20,17 @@
 package io.github.rypofalem.armorstandeditor;
 
 import com.google.common.collect.ImmutableList;
+import es.pollitoyeye.vehicles.listeners.EventListener;
 import io.github.rypofalem.armorstandeditor.api.ArmorStandRenameEvent;
 import io.github.rypofalem.armorstandeditor.api.ItemFrameGlowEvent;
 import io.github.rypofalem.armorstandeditor.menu.ASEHolder;
 import io.github.rypofalem.armorstandeditor.protections.*;
-
 import org.bukkit.*;
-import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.*;
-import org.bukkit.event.*;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
@@ -41,6 +42,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.util.Vector;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -74,7 +76,7 @@ public class PlayerEditorManager implements Listener {
             new WorldGuardProtection(),
             new BentoBoxProtection());
 
-    PlayerEditorManager( ArmorStandEditorPlugin plugin) {
+    PlayerEditorManager(ArmorStandEditorPlugin plugin) {
         this.plugin = plugin;
         players = new HashMap<>();
         coarseAdj = Util.FULL_CIRCLE / plugin.coarseRot;
@@ -86,7 +88,7 @@ public class PlayerEditorManager implements Listener {
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    void onArmorStandDamage( EntityDamageByEntityEvent event) {
+    void onArmorStandDamage(EntityDamageByEntityEvent event) {
         if (!(event.getDamager() instanceof Player)) return;
         Player player = (Player) event.getDamager();
         if (!plugin.isEditTool(player.getInventory().getItemInMainHand())) return;
@@ -110,7 +112,7 @@ public class PlayerEditorManager implements Listener {
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    void onArmorStandInteract( PlayerInteractAtEntityEvent event) {
+    void onArmorStandInteract(PlayerInteractAtEntityEvent event) {
         if (ignoreNextInteract) return;
         if (event.getHand() != EquipmentSlot.HAND) return;
         Player player = event.getPlayer();
@@ -260,7 +262,7 @@ public class PlayerEditorManager implements Listener {
             List<Entity> nearby = (List<Entity>) player.getWorld().getNearbyEntities(eyeLaser, LASERRADIUS, LASERRADIUS, LASERRADIUS);
             if (!nearby.isEmpty()) {
                 boolean endLaser = false;
-                for ( Entity e : nearby) {
+                for (Entity e : nearby) {
                     if (e instanceof ArmorStand) {
                         armorStands.add((ArmorStand) e);
                         endLaser = true;
@@ -291,7 +293,7 @@ public class PlayerEditorManager implements Listener {
             List<Entity> nearby = (List<Entity>) player.getWorld().getNearbyEntities(eyeLaser, LASERRADIUS, LASERRADIUS, LASERRADIUS);
             if (!nearby.isEmpty()) {
                 boolean endLaser = false;
-                for ( Entity e : nearby) {
+                for (Entity e : nearby) {
                     if (e instanceof ItemFrame) {
                         itemFrames.add((ItemFrame) e);
                         endLaser = true;
@@ -308,40 +310,79 @@ public class PlayerEditorManager implements Listener {
     }
 
 
-    boolean canEdit( Player player,  Entity entity) {
+    boolean canEdit(Player player, Entity entity) {
 
         // get the block the entity is standing on
 //        Block block = entity.getLocation().getBlock();
         // now get the block the player is standing on
+
+        // check if the entity is some sort of vehcile.
+
+        try {
+            if (entity instanceof ArmorStand) {
+                ArmorStand as = (ArmorStand) entity;
+                String var3 = as.getCustomName();
+                if (var3 != null) {
+                    boolean var4 = isVehicleName(var3);
+                    if (var4) return false;
+                }
+            }
+        } catch (Throwable ignored) {
+        }
 
         BlockBreakEvent blockBreakEvent = new BlockBreakEvent(entity.getLocation().getBlock(), player);
         Bukkit.getPluginManager().callEvent(blockBreakEvent);
         return !blockBreakEvent.isCancelled();
     }
 
-    void applyLeftTool( Player player,  ArmorStand as) {
+    public boolean isVehicleName(String var1) {
+
+        String[] vehiclePartsNames = new String[]{};
+        Class<?> clazz = EventListener.class;
+        try {
+            Field field = clazz.getDeclaredField("vehiclePartsNames");
+            field.setAccessible(true);
+            vehiclePartsNames = (String[]) field.get(null);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+        String[] var5;
+        int var4 = (var5 = vehiclePartsNames).length;
+
+        for (int var3 = 0; var3 < var4; ++var3) {
+            String var2 = var5[var3];
+            if (var1.startsWith(var2)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    void applyLeftTool(Player player, ArmorStand as) {
         getPlayerEditor(player.getUniqueId()).cancelOpenMenu();
         getPlayerEditor(player.getUniqueId()).editArmorStand(as);
     }
 
-    void applyLeftTool( Player player,  ItemFrame itemf) {
+    void applyLeftTool(Player player, ItemFrame itemf) {
         getPlayerEditor(player.getUniqueId()).cancelOpenMenu();
         getPlayerEditor(player.getUniqueId()).editItemFrame(itemf);
     }
 
-    void applyRightTool( Player player,  ItemFrame itemf) {
+    void applyRightTool(Player player, ItemFrame itemf) {
         getPlayerEditor(player.getUniqueId()).cancelOpenMenu();
         getPlayerEditor(player.getUniqueId()).editItemFrame(itemf);
     }
 
-    void applyRightTool( Player player,  ArmorStand as) {
+    void applyRightTool(Player player, ArmorStand as) {
         getPlayerEditor(player.getUniqueId()).cancelOpenMenu();
         getPlayerEditor(player.getUniqueId()).reverseEditArmorStand(as);
     }
 
     //Unused?
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    void onRightClickTool( PlayerInteractEvent e) {
+    void onRightClickTool(PlayerInteractEvent e) {
         if (!(e.getAction() == Action.LEFT_CLICK_AIR
                 || e.getAction() == Action.RIGHT_CLICK_AIR
                 || e.getAction() == Action.LEFT_CLICK_BLOCK
@@ -349,13 +390,13 @@ public class PlayerEditorManager implements Listener {
         Player player = e.getPlayer();
         if (!plugin.isEditTool(player.getInventory().getItemInMainHand())) return;
         if (plugin.requireSneaking && !player.isSneaking()) return;
-        if(!player.hasPermission("asedit.basic")) return;
+        if (!player.hasPermission("asedit.basic")) return;
         e.setCancelled(true);
         getPlayerEditor(player.getUniqueId()).openMenu();
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    void onScrollNCrouch( PlayerItemHeldEvent e) {
+    void onScrollNCrouch(PlayerItemHeldEvent e) {
         Player player = e.getPlayer();
         if (!player.isSneaking()) return;
         if (!plugin.isEditTool(player.getInventory().getItem(e.getPreviousSlot()))) return;
@@ -369,7 +410,7 @@ public class PlayerEditorManager implements Listener {
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    void onPlayerMenuSelect( InventoryClickEvent e) {
+    void onPlayerMenuSelect(InventoryClickEvent e) {
         if (e.getInventory().getHolder() == null) return;
         if (!(e.getInventory().getHolder() instanceof ASEHolder)) return;
         if (e.getInventory().getHolder() == menuHolder) {
@@ -395,7 +436,7 @@ public class PlayerEditorManager implements Listener {
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    void onPlayerMenuClose( InventoryCloseEvent e) {
+    void onPlayerMenuClose(InventoryCloseEvent e) {
         if (e.getInventory().getHolder() == null) return;
         if (e.getInventory().getHolder() == equipmentHolder) {
             PlayerEditor pe = players.get(e.getPlayer().getUniqueId());
@@ -404,21 +445,21 @@ public class PlayerEditorManager implements Listener {
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    void onPlayerLogOut( PlayerQuitEvent e) {
+    void onPlayerLogOut(PlayerQuitEvent e) {
         removePlayerEditor(e.getPlayer().getUniqueId());
     }
 
-    public PlayerEditor getPlayerEditor( UUID uuid) {
+    public PlayerEditor getPlayerEditor(UUID uuid) {
         return players.containsKey(uuid) ? players.get(uuid) : addPlayerEditor(uuid);
     }
 
-    PlayerEditor addPlayerEditor( UUID uuid) {
+    PlayerEditor addPlayerEditor(UUID uuid) {
         PlayerEditor pe = new PlayerEditor(uuid, plugin);
         players.put(uuid, pe);
         return pe;
     }
 
-    private void removePlayerEditor( UUID uuid) {
+    private void removePlayerEditor(UUID uuid) {
         players.remove(uuid);
     }
 
@@ -430,14 +471,20 @@ public class PlayerEditorManager implements Listener {
         return equipmentHolder;
     }
 
-    long getTime(){
+    long getTime() {
         return counter.ticks;
     }
 
-    class TickCounter implements Runnable{
+    class TickCounter implements Runnable {
         long ticks = 0; //I am optimistic
+
         @Override
-        public void run() {ticks++;}
-        public long getTime() {return ticks;}
+        public void run() {
+            ticks++;
+        }
+
+        public long getTime() {
+            return ticks;
+        }
     }
 }

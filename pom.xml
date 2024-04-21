@@ -205,6 +205,13 @@
             <version>1.18.28</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>es.pollitoyeye.vehicles</groupId>
+            <artifactId>vehicles</artifactId>
+            <version>14.0</version>
+            <systemPath>${project.basedir}/lib/Vehicles(14.0).jar</systemPath>
+            <scope>system</scope>
+        </dependency>
     </dependencies>
     <!--Java 8-->
     <build>
